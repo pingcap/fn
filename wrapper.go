@@ -14,16 +14,17 @@
 package barefn
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 )
 
 type (
 	// ErrorEncoder encode error to response body
-	ErrorEncoder func(error) interface{}
+	ErrorEncoder func(ctx context.Context, err error) interface{}
 
 	// ResponseEncoder encode payload to response body
-	ResponseEncoder func(payload interface{}) interface{}
+	ResponseEncoder func(ctx context.Context, payload interface{}) interface{}
 
 	// BareFn represents a handler that contains a bundle of hooks
 	BareFn struct {
@@ -105,11 +106,11 @@ func (fn *BareFn) Plugin(before ...PluginFunc) *BareFn {
 }
 
 func init() {
-	errorEncoder = func(err error) interface{} {
+	errorEncoder = func(ctx context.Context, err error) interface{} {
 		return err.Error()
 	}
 
-	responseEncoder = func(payload interface{}) interface{} {
+	responseEncoder = func(ctx context.Context, payload interface{}) interface{} {
 		return payload
 	}
 }

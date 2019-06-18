@@ -303,6 +303,10 @@ func auth(ctx context.Context, req *http.Request) (context.Context, error) {
 	return ctx, nil
 }
 
+func injectRequest(ctx context.Context, req *http.Request) (context.Context, error) {
+	return context.WithValue(ctx, "_rawreq", req), nil
+}
+
 type User struct{
 	Balance int64	
 }
@@ -336,24 +340,25 @@ type ErrorMessage struct{
 }
 
 func example() {
-	// Uniform all responses
-	barefn.SetErrorEncoder(func(err error) interface{} {
-	    return &ErrorMessage{
-	    	Code: -1,
-	    	Error: err.Error(),
-	    }
-	})
-	
-	barefn.SetResponseEncoder(func(payload interface{}) interface{} {
-	    return &ResponseMessage {
-	    	Code: 1,
-	    	Data: payload,
-	    }
-	})
-	
 	// Global plugins
-	barefn.Plugin(logger, ipWhitelist, auth)
-	
+	barefn.Plugin(logger, ipWhitelist, auth, injectRequest)
+    // Uniform all responses
+    barefn.SetErrorEncoder(func(ctx context.Context, err error) interface{} {
+    	req := ctx.Value("_rawreq").(*http.Request)
+    	log.Println("Error occurred: ", req.URL, err)
+        return &ErrorMessage{
+            Code: -1,
+            Error: err.Error(),
+        }
+    })
+    
+    barefn.SetResponseEncoder(func(ctx context.Context, payload interface{}) interface{} {
+        return &ResponseMessage {
+            Code: 1,
+            Data: payload,
+        }
+    })
+    	
 	group := barefn.NewGroup()
 	
 	// Group plugins
