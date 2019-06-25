@@ -11,16 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package barefn
+package fn
 
 import (
 	"reflect"
 )
 
-func Wrap(f interface{}) *BareFn {
+func Wrap(f interface{}) *fn {
 	t := reflect.TypeOf(f)
 	if t.Kind() != reflect.Func {
-		panic("barefn only support wrap a function to http.Handler")
+		panic("fn only support wrap a function to http.Handler")
 	}
 
 	numOut := t.NumOut()
@@ -83,13 +83,13 @@ func Wrap(f interface{}) *BareFn {
 		// type LoginRequest {...}
 		//
 		// func (header http.Header) (*LoginResponse, error) {}
-		// func (form barefn.Form) (*LoginResponse, error) {}
-		// func (header http.Header, form barefn.Form, body io.ReadCloser) (*LoginResponse, error) {}
+		// func (form fn.Form) (*LoginResponse, error) {}
+		// func (header http.Header, form fn.Form, body io.ReadCloser) (*LoginResponse, error) {}
 		// func (header http.Header, r *LoginRequest, url *url.URL) (*LoginResponse, error) { }
 		adapter = makeGenericAdapter(reflect.ValueOf(f), inContext)
 	}
 
-	return &BareFn{adapter: adapter}
+	return &fn{adapter: adapter}
 }
 
 func SetErrorEncoder(c ErrorEncoder) {

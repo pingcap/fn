@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package barefn
+package fn
 
 import (
 	"strconv"
@@ -100,20 +100,19 @@ func (f *uniform) Get(key string) string {
 // Set sets the key to value. It replaces any existing
 // values.
 func (f *uniform) Set(key, value string) {
-	f.Values.Set(key,value)
+	f.Values.Set(key, value)
 }
 
 // Add adds the value to key. It appends to any existing
 // values associated with key.
 func (f *uniform) Add(key, value string) {
-	f.Values.Add(key,value)
+	f.Values.Add(key, value)
 }
 
 // Del deletes the values associated with key.
 func (f *uniform) Del(key string) {
 	f.Values.Del(key)
 }
-
 
 // Encode encodes the values into ``URL encoded'' form
 // ("bar=baz&foo=quux") sorted by key.

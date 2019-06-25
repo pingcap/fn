@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package barefn
+package fn
 
 import (
 	"context"
@@ -26,8 +26,8 @@ type (
 	// ResponseEncoder encode payload to response body
 	ResponseEncoder func(ctx context.Context, payload interface{}) interface{}
 
-	// BareFn represents a handler that contains a bundle of hooks
-	BareFn struct {
+	// fn represents a handler that contains a bundle of hooks
+	fn struct {
 		plugins []PluginFunc
 		adapter adapter
 	}
@@ -64,7 +64,7 @@ func success(w http.ResponseWriter, data interface{}) {
 	json.NewEncoder(w).Encode(responseEncoder(data))
 }
 
-func (fn *BareFn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	var (
 		ctx  = r.Context()
@@ -96,7 +96,7 @@ func (fn *BareFn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	success(w, resp)
 }
 
-func (fn *BareFn) Plugin(before ...PluginFunc) *BareFn {
+func (fn *fn) Plugin(before ...PluginFunc) *fn {
 	for _, b := range before {
 		if b != nil {
 			fn.plugins = append(fn.plugins, b)

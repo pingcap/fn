@@ -1,7 +1,7 @@
-# barefn
+# fn
 
 This library aims to simplify the construction of JSON API service,
-`barefn.Wrap` is able to wrap any function to adapt the interface of
+`fn.Wrap` is able to wrap any function to adapt the interface of
 `http.Handler`, which unmarshals POST data to a struct automatically.
 
 ## Benchmark
@@ -18,10 +18,10 @@ BenchmarkGenericAdapter_Invoke-8         2000000               708 ns/op        
 ```
 io.ReadCloser      // request.Body
 http.Header        // request.Header
-barefn.Form        // request.Form
-barefn.PostForm    // request.PostForm
-*barefn.Form       // request.Form
-*barefn.PostForm   // request.PostForm
+fn.Form        // request.Form
+fn.PostForm    // request.PostForm
+*fn.Form       // request.Form
+*fn.PostForm   // request.PostForm
 *url.URL           // request.URL
 *multipart.Form    // request.MultipartForm
 *http.Request      // raw request
@@ -30,9 +30,9 @@ barefn.PostForm    // request.PostForm
 ## Usage
 
 ```
-http.Handle("/test", barefn.Wrap(test))
+http.Handle("/test", fn.Wrap(test))
 
-func test(io.ReadCloser, http.Header, barefn.Form, barefn.PostForm, *CustomizedRequestType, *url.URL, *multipart.Form) (*CustomizedResponseType, error)
+func test(io.ReadCloser, http.Header, fn.Form, fn.PostForm, *CustomizedRequestType, *url.URL, *multipart.Form) (*CustomizedResponseType, error)
 ```
 
 ## Examples
@@ -48,7 +48,7 @@ import (
 	"net/http"
     "net/url"
 	
-	"github.com/pingcap/barefn"
+	"github.com/pingcap/fn"
 )
 
 type Request struct{
@@ -79,7 +79,7 @@ func api4(rawreq http.Header, request *Request) (*Response, error) {
 	return &Response{ Token: token }, nil
 }
 
-func api5(form *barefn.Form, request *Request) (*Response, error) {
+func api5(form *fn.Form, request *Request) (*Response, error) {
 	token := request.Username + request.Password + form.Get("type")
 	return &Response{ Token: token }, nil
 }
@@ -120,7 +120,7 @@ import (
     "net/url"
     "strings"
 	
-	"github.com/pingcap/barefn"
+	"github.com/pingcap/fn"
 )
 
 var PermissionDenied = errors.New("permission denied")
@@ -141,7 +141,7 @@ func auth(ctx context.Context, req *http.Request) (context.Context, error) {
 	token := req.Header.Get("X-Auth-token")
 	_ = token // Validate token (e.g: query db)
 	if token != "valid" {
-		return ctx, barefn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
+		return ctx, fn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
 	}
 	return ctx, nil
 }
@@ -156,9 +156,9 @@ type Response struct{
 }
 
 func example() {
-	barefn.Plugin(logger, ipWhitelist, auth)
-	http.Handle("/api1", barefn.Wrap(api1))
-	http.Handle("/api2", barefn.Wrap(api2))
+	fn.Plugin(logger, ipWhitelist, auth)
+	http.Handle("/api1", fn.Wrap(api1))
+	http.Handle("/api2", fn.Wrap(api2))
 }
 
 // api1 and api2 request have be validated by `ipWhitelist` and `auth`
@@ -173,7 +173,7 @@ func api2(request *Request) (*Response, error) {
 }
 ```
 
-### `barefn.Group`
+### `fn.Group`
 
 ```go
 package examples
@@ -188,7 +188,7 @@ import (
     "net/url"
     "strings"
 	
-	"github.com/pingcap/barefn"
+	"github.com/pingcap/fn"
 )
 
 var PermissionDenied = errors.New("permission denied")
@@ -209,7 +209,7 @@ func auth(ctx context.Context, req *http.Request) (context.Context, error) {
 	token := req.Header.Get("X-Auth-token")
 	_ = token // Validate token (e.g: query db)
 	if token != "valid" {
-		return ctx, barefn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
+		return ctx, fn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
 	}
 	return ctx, nil
 }
@@ -222,7 +222,7 @@ func queryUserFromRedis(ctx context.Context, req *http.Request) (context.Context
 	token := req.Header.Get("X-Auth-token")
 	_ = token // Validate token (e.g: query db)
 	if token != "valid" {
-		return ctx, barefn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
+		return ctx, fn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
 	}
 	user := &User{
 		Balance: 10000, // balance from redis
@@ -237,9 +237,9 @@ type Response struct{
 
 func example() {
 	// Global plugins
-	barefn.Plugin(logger, ipWhitelist, auth)
+	fn.Plugin(logger, ipWhitelist, auth)
 	
-	group := barefn.NewGroup()
+	group := fn.NewGroup()
 	
 	// Group plugins
 	group.Plugin(queryUserFromRedis)
@@ -277,7 +277,7 @@ import (
     "net/url"
     "strings"
 	
-	"github.com/pingcap/barefn"
+	"github.com/pingcap/fn"
 )
 
 var PermissionDenied = errors.New("permission denied")
@@ -298,7 +298,7 @@ func auth(ctx context.Context, req *http.Request) (context.Context, error) {
 	token := req.Header.Get("X-Auth-token")
 	_ = token // Validate token (e.g: query db)
 	if token != "valid" {
-		return ctx, barefn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
+		return ctx, fn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
 	}
 	return ctx, nil
 }
@@ -315,7 +315,7 @@ func queryUserFromRedis(ctx context.Context, req *http.Request) (context.Context
 	token := req.Header.Get("X-Auth-token")
 	_ = token // Validate token (e.g: query db)
 	if token != "valid" {
-		return ctx, barefn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
+		return ctx, fn.ErrorWithStatusCode(PermissionDenied, http.StatusForbidden)
 	}
 	user := &User{
 		Balance: 10000, // balance from redis
@@ -341,9 +341,9 @@ type ErrorMessage struct{
 
 func example() {
 	// Global plugins
-	barefn.Plugin(logger, ipWhitelist, auth, injectRequest)
+	fn.Plugin(logger, ipWhitelist, auth, injectRequest)
     // Uniform all responses
-    barefn.SetErrorEncoder(func(ctx context.Context, err error) interface{} {
+    fn.SetErrorEncoder(func(ctx context.Context, err error) interface{} {
     	req := ctx.Value("_rawreq").(*http.Request)
     	log.Println("Error occurred: ", req.URL, err)
         return &ErrorMessage{
@@ -352,14 +352,14 @@ func example() {
         }
     })
     
-    barefn.SetResponseEncoder(func(ctx context.Context, payload interface{}) interface{} {
+    fn.SetResponseEncoder(func(ctx context.Context, payload interface{}) interface{} {
         return &ResponseMessage {
             Code: 1,
             Data: payload,
         }
     })
     	
-	group := barefn.NewGroup()
+	group := fn.NewGroup()
 	
 	// Group plugins
 	group.Plugin(queryUserFromRedis)

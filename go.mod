@@ -1,4 +1,4 @@
-module github.com/pingcap/barefn
+module github.com/pingcap/fn
 
 go 1.11
 

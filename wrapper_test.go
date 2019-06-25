@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package barefn
+package fn
 
 import (
 	"bytes"
@@ -27,13 +27,13 @@ import (
 	. "github.com/pingcap/check"
 )
 
-type barefnSuite struct{}
+type fnSuite struct{}
 
-func TestBarefn(t *testing.T) {
+func Testfn(t *testing.T) {
 	TestingT(t)
 }
 
-var _ = Suite(&barefnSuite{})
+var _ = Suite(&fnSuite{})
 
 type testRequest struct {
 	Foo string `json:"foo"`
@@ -83,7 +83,7 @@ func withAll(io.ReadCloser, *testRequest, Form, PostForm, http.Header, *multipar
 	return nil, nil
 }
 
-func (s *barefnSuite) TestHandler(c *C) {
+func (s *fnSuite) TestHandler(c *C) {
 	Wrap(withNone)
 	Wrap(withBody)
 	Wrap(withReq)
@@ -101,7 +101,7 @@ func (s *barefnSuite) TestHandler(c *C) {
 	Wrap(withInContextAndPayload)
 }
 
-func (s *barefnSuite) TestPlugin(c *C) {
+func (s *fnSuite) TestPlugin(c *C) {
 	logic := func(ctx context.Context) (*testResponse, error) {
 		c.Assert(ctx.Value("key").(string) == "value", IsTrue)
 		c.Assert(ctx.Value("key2").(string) == "value2", IsTrue)

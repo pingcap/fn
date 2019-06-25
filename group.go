@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package barefn
+package fn
 
 // Group represents a handler group that contains same hooks
 type Group struct {
@@ -31,7 +31,7 @@ func (g *Group) Plugin(plugins ...PluginFunc) *Group {
 	return g
 }
 
-func (g *Group) Wrap(f interface{}) *BareFn {
+func (g *Group) Wrap(f interface{}) *fn {
 	n := Wrap(f)
 	if length := len(g.plugins); length > 0 {
 		n.plugins = make([]PluginFunc, length)
