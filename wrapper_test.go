@@ -16,12 +16,15 @@ package fn
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"testing"
 
 	. "github.com/pingcap/check"
@@ -29,7 +32,7 @@ import (
 
 type fnSuite struct{}
 
-func Testfn(t *testing.T) {
+func TestFn(t *testing.T) {
 	TestingT(t)
 }
 
@@ -42,6 +45,10 @@ type testRequest struct {
 type testResponse struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+}
+type testErrorResponse struct {
+	Code  int    `json:"code"`
+	Error string `json:"message"`
 }
 
 var successResponse = &testResponse{Message: "success"}
@@ -127,6 +134,109 @@ func (s *fnSuite) TestPlugin(c *C) {
 	request, err := http.NewRequest(http.MethodGet, "", nil)
 	c.Assert(err, IsNil)
 	handler.ServeHTTP(recorder, request)
+}
+
+func (s *fnSuite) TestGroupPlugin(c *C) {
+	group := NewGroup()
+	group.Plugin(func(ctx context.Context, request *http.Request) (context.Context, error) {
+		return context.WithValue(ctx, "key", "value"), nil
+	})
+
+	logic := func(ctx context.Context) (*testResponse, error) {
+		c.Assert(ctx.Value("key").(string) == "value", IsTrue)
+		return &testResponse{}, nil
+	}
+	handler := group.Wrap(logic)
+
+	recorder := httptest.NewRecorder()
+	request, err := http.NewRequest(http.MethodGet, "", nil)
+	c.Assert(err, IsNil)
+	handler.ServeHTTP(recorder, request)
+}
+
+func (s *fnSuite) TestSetResponseEncoder(c *C) {
+	handler := Wrap(func(ctx context.Context, request *http.Request) (context.Context, error) {
+		return nil, nil
+	})
+
+	testResp := &testResponse{
+		Code:    1,
+		Message: "msg",
+	}
+	SetResponseEncoder(func(ctx context.Context, payload interface{}) interface{} {
+		return testResp
+	})
+
+	recorder := httptest.NewRecorder()
+	request, err := http.NewRequest(http.MethodGet, "", nil)
+	c.Assert(err, IsNil)
+	handler.ServeHTTP(recorder, request)
+	respMsg := &testResponse{}
+	json.Unmarshal(recorder.Body.Bytes(), &respMsg)
+	c.Assert(reflect.DeepEqual(respMsg, testResp), IsTrue)
+}
+
+func (s *fnSuite) TestSetErrorEncoder(c *C) {
+	handler := Wrap(func(ctx context.Context, request *http.Request) (context.Context, error) {
+		return nil, errors.New("")
+	})
+
+	testErrorResp := &testErrorResponse{
+		Code:  -1,
+		Error: "something went wrong",
+	}
+	SetErrorEncoder(func(ctx context.Context, err error) interface{} {
+		return testErrorResp
+	})
+
+	recorder := httptest.NewRecorder()
+	request, err := http.NewRequest(http.MethodGet, "", nil)
+	c.Assert(err, IsNil)
+	handler.ServeHTTP(recorder, request)
+
+	respMsg := &testErrorResponse{}
+	json.Unmarshal(recorder.Body.Bytes(), &respMsg)
+	c.Assert(reflect.DeepEqual(respMsg, testErrorResp), IsTrue)
+}
+
+func (s *fnSuite) TestGenericAdapter_Invoke(c *C) {
+	type CustomForm testRequest
+	handler := Wrap(func(ctx context.Context, form *CustomForm) (context.Context, error) {
+		return nil, nil
+	})
+
+	recorder := httptest.NewRecorder()
+	request, err := http.NewRequest(http.MethodGet, "", nil)
+	payload := []byte(`{"for":"hello", "bar":10000}`)
+	request.Body = ioutil.NopCloser(bytes.NewBuffer(payload))
+	c.Assert(err, IsNil)
+	handler.ServeHTTP(recorder, request)
+}
+
+func (s *fnSuite) TestSimpleUnaryAdapter_Invoke(c *C) {
+	handler := Wrap(withReq)
+
+	recorder := httptest.NewRecorder()
+	request, err := http.NewRequest(http.MethodGet, "", nil)
+	if err != nil {
+		c.Fatal(err)
+	}
+	payload := []byte(`{"for":"hello", "bar":10000}`)
+	request.Body = ioutil.NopCloser(bytes.NewBuffer(payload))
+	c.Assert(err, IsNil)
+	handler.ServeHTTP(recorder, request)
+}
+
+func (s *fnSuite) TestErrorWithStatusCode(c *C) {
+	handler := Wrap(func(ctx context.Context, request *http.Request) (context.Context, error) {
+		return nil, ErrorWithStatusCode(errors.New("not found"), http.StatusNotFound)
+	})
+
+	recorder := httptest.NewRecorder()
+	request, err := http.NewRequest(http.MethodGet, "", nil)
+	c.Assert(err, IsNil)
+	handler.ServeHTTP(recorder, request)
+	c.Assert(recorder.Code == http.StatusNotFound, IsTrue)
 }
 
 func BenchmarkSimplePlainAdapter_Invoke(b *testing.B) {

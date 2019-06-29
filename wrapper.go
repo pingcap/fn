@@ -57,11 +57,11 @@ func failure(w http.ResponseWriter, err error) {
 		statusCode = v.StatusCode()
 	}
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(errorEncoder(err))
+	json.NewEncoder(w).Encode(errorEncoder(nil, err))
 }
 
 func success(w http.ResponseWriter, data interface{}) {
-	json.NewEncoder(w).Encode(responseEncoder(data))
+	json.NewEncoder(w).Encode(responseEncoder(nil, data))
 }
 
 func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
