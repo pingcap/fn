@@ -15,6 +15,7 @@ package fn
 
 import (
 	"context"
+	"reflect"
 	"encoding/json"
 	"net/http"
 )
@@ -51,17 +52,21 @@ func (s *statusCodeError) StatusCode() int {
 	return s.statusCode
 }
 
-func failure(w http.ResponseWriter, err error) {
+func failure(ctx context.Context, w http.ResponseWriter, err error) {
 	statusCode := http.StatusBadRequest
 	if v, ok := err.(StatusCodeError); ok {
 		statusCode = v.StatusCode()
 	}
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(errorEncoder(nil, err))
+	json.NewEncoder(w).Encode(errorEncoder(ctx, err))
 }
 
-func success(w http.ResponseWriter, data interface{}) {
-	json.NewEncoder(w).Encode(responseEncoder(nil, data))
+func success(ctx context.Context, w http.ResponseWriter, data interface{}) {
+	if data == nil || (reflect.ValueOf(data).Kind() == reflect.Ptr && reflect.ValueOf(data).IsNil()) {
+		w.WriteHeader(http.StatusNoContent)
+	} else {
+		json.NewEncoder(w).Encode(responseEncoder(ctx, data))
+	}
 }
 
 func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +80,7 @@ func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, b := range globalPlugins {
 		ctx, err = b(ctx, r)
 		if err != nil {
-			failure(w, err)
+			failure(ctx, w, err)
 			return
 		}
 	}
@@ -83,17 +88,17 @@ func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, b := range fn.plugins {
 		ctx, err = b(ctx, r)
 		if err != nil {
-			failure(w, err)
+			failure(ctx, w, err)
 			return
 		}
 	}
 
 	resp, err = fn.adapter.invoke(ctx, w, r)
 	if err != nil {
-		failure(w, err)
+		failure(ctx, w, err)
 		return
 	}
-	success(w, resp)
+	success(ctx, w, resp)
 }
 
 func (fn *fn) Plugin(before ...PluginFunc) *fn {
