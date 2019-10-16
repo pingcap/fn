@@ -29,7 +29,7 @@ fn.PostForm    // request.PostForm
 
 ## Usage
 
-```
+```go
 http.Handle("/test", fn.Wrap(test))
 
 func test(io.ReadCloser, http.Header, fn.Form, fn.PostForm, *CustomizedRequestType, *url.URL, *multipart.Form) (*CustomizedResponseType, error)
@@ -43,65 +43,65 @@ func test(io.ReadCloser, http.Header, fn.Form, fn.PostForm, *CustomizedRequestTy
 package examples
 
 import (
-    "io"
-    "mime/multipart"
+	"io"
+	"mime/multipart"
 	"net/http"
-    "net/url"
-	
+	"net/url"
+
 	"github.com/pingcap/fn"
 )
 
-type Request struct{
+type Request struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-type Response struct{
+type Response struct {
 	Token string `json:"token"`
 }
 
 func api1() (*Response, error) {
-	return &Response{ Token: "token" }, nil
+	return &Response{Token: "token"}, nil
 }
 
 func api2(request *Request) (*Response, error) {
 	token := request.Username + request.Password
-	return &Response{ Token: token }, nil
+	return &Response{Token: token}, nil
 }
 
 func api3(rawreq *http.Request, request *Request) (*Response, error) {
 	token := request.Username + request.Password
-	return &Response{ Token: token }, nil
+	return &Response{Token: token}, nil
 }
 
 func api4(rawreq http.Header, request *Request) (*Response, error) {
 	token := request.Username + request.Password
-	return &Response{ Token: token }, nil
+	return &Response{Token: token}, nil
 }
 
 func api5(form *fn.Form, request *Request) (*Response, error) {
 	token := request.Username + request.Password + form.Get("type")
-	return &Response{ Token: token }, nil
+	return &Response{Token: token}, nil
 }
 
 func api6(body io.ReadCloser, request *Request) (*Response, error) {
 	token := request.Username + request.Password
-	return &Response{ Token: token }, nil
+	return &Response{Token: token}, nil
 }
 
 func api7(form *multipart.Form, request *Request) (*Response, error) {
 	token := request.Username + request.Password
-	return &Response{ Token: token }, nil
+	return &Response{Token: token}, nil
 }
 
 func api7(urls *url.URL, request *Request) (*Response, error) {
 	token := request.Username + request.Password
-	return &Response{ Token: token }, nil
+	return &Response{Token: token}, nil
 }
 
 func api8(urls *url.URL, form *multipart.Form, body io.ReadCloser, rawreq http.Header, request *Request) (*Response, error) {
 	token := request.Username + request.Password
-	return &Response{ Token: token }, nil
+	return &Response{Token: token}, nil
 }
 ```
 
@@ -111,22 +111,22 @@ func api8(urls *url.URL, form *multipart.Form, body io.ReadCloser, rawreq http.H
 package examples
 
 import (
-    "context"
-    "errors"
-    "io"
-    "log"
-    "mime/multipart"
+	"context"
+	"errors"
+	"io"
+	"log"
+	"mime/multipart"
 	"net/http"
-    "net/url"
-    "strings"
-	
+	"net/url"
+	"strings"
+
 	"github.com/pingcap/fn"
 )
 
 var PermissionDenied = errors.New("permission denied")
 
 func logger(ctx context.Context, req *http.Request) (context.Context, error) {
-    log.Println("Request", req.RemoteAddr, req.URL.String())
+	log.Println("Request", req.RemoteAddr, req.URL.String())
 	return ctx, nil
 }
 
@@ -134,7 +134,7 @@ func ipWhitelist(ctx context.Context, req *http.Request) (context.Context, error
 	if strings.HasPrefix(req.RemoteAddr, "172.168") {
 		return ctx, PermissionDenied
 	}
-    return ctx, nil
+	return ctx, nil
 }
 
 func auth(ctx context.Context, req *http.Request) (context.Context, error) {
@@ -146,12 +146,12 @@ func auth(ctx context.Context, req *http.Request) (context.Context, error) {
 	return ctx, nil
 }
 
-type Request struct{
+type Request struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-type Response struct{
+type Response struct {
 	Token string `json:"token"`
 }
 
@@ -164,12 +164,12 @@ func example() {
 // api1 and api2 request have be validated by `ipWhitelist` and `auth`
 
 func api1() (*Response, error) {
-	return &Response{ Token: "token" }, nil
+	return &Response{Token: "token"}, nil
 }
 
 func api2(request *Request) (*Response, error) {
 	token := request.Username + request.Password
-	return &Response{ Token: token }, nil
+	return &Response{Token: token}, nil
 }
 ```
 
@@ -179,22 +179,22 @@ func api2(request *Request) (*Response, error) {
 package examples
 
 import (
-    "context"
-    "errors"
-    "io"
-    "log"
-    "mime/multipart"
+	"context"
+	"errors"
+	"io"
+	"log"
+	"mime/multipart"
 	"net/http"
-    "net/url"
-    "strings"
-	
+	"net/url"
+	"strings"
+
 	"github.com/pingcap/fn"
 )
 
 var PermissionDenied = errors.New("permission denied")
 
 func logger(ctx context.Context, req *http.Request) (context.Context, error) {
-    log.Println("Request", req.RemoteAddr, req.URL.String())
+	log.Println("Request", req.RemoteAddr, req.URL.String())
 	return ctx, nil
 }
 
@@ -202,7 +202,7 @@ func ipWhitelist(ctx context.Context, req *http.Request) (context.Context, error
 	if strings.HasPrefix(req.RemoteAddr, "172.168") {
 		return ctx, PermissionDenied
 	}
-    return ctx, nil
+	return ctx, nil
 }
 
 func auth(ctx context.Context, req *http.Request) (context.Context, error) {
@@ -214,8 +214,8 @@ func auth(ctx context.Context, req *http.Request) (context.Context, error) {
 	return ctx, nil
 }
 
-type User struct{
-	Balance int64	
+type User struct {
+	Balance int64
 }
 
 func queryUserFromRedis(ctx context.Context, req *http.Request) (context.Context, error) {
@@ -230,21 +230,20 @@ func queryUserFromRedis(ctx context.Context, req *http.Request) (context.Context
 	return context.WithValue(ctx, "user", user), nil
 }
 
-
-type Response struct{
+type Response struct {
 	Balance int64 `json:"balance"`
 }
 
 func example() {
 	// Global plugins
 	fn.Plugin(logger, ipWhitelist, auth)
-	
+
 	group := fn.NewGroup()
-	
+
 	// Group plugins
 	group.Plugin(queryUserFromRedis)
-    http.Handle("/user/balance", group.Wrap(fetchBalance))
-    http.Handle("/user/buy", group.Wrap(buy))
+	http.Handle("/user/balance", group.Wrap(fetchBalance))
+	http.Handle("/user/buy", group.Wrap(buy))
 }
 
 func fetchBalance(ctx context.Context) (*Response, error) {
@@ -268,22 +267,22 @@ func buy(ctx context.Context) (*Response, error) {
 package examples
 
 import (
-    "context"
-    "errors"
-    "io"
-    "log"
-    "mime/multipart"
+	"context"
+	"errors"
+	"io"
+	"log"
+	"mime/multipart"
 	"net/http"
-    "net/url"
-    "strings"
-	
+	"net/url"
+	"strings"
+
 	"github.com/pingcap/fn"
 )
 
 var PermissionDenied = errors.New("permission denied")
 
 func logger(ctx context.Context, req *http.Request) (context.Context, error) {
-    log.Println("Request", req.RemoteAddr, req.URL.String())
+	log.Println("Request", req.RemoteAddr, req.URL.String())
 	return ctx, nil
 }
 
@@ -291,7 +290,7 @@ func ipWhitelist(ctx context.Context, req *http.Request) (context.Context, error
 	if strings.HasPrefix(req.RemoteAddr, "172.168") {
 		return ctx, PermissionDenied
 	}
-    return ctx, nil
+	return ctx, nil
 }
 
 func auth(ctx context.Context, req *http.Request) (context.Context, error) {
@@ -307,8 +306,8 @@ func injectRequest(ctx context.Context, req *http.Request) (context.Context, err
 	return context.WithValue(ctx, "_rawreq", req), nil
 }
 
-type User struct{
-	Balance int64	
+type User struct {
+	Balance int64
 }
 
 func queryUserFromRedis(ctx context.Context, req *http.Request) (context.Context, error) {
@@ -323,48 +322,46 @@ func queryUserFromRedis(ctx context.Context, req *http.Request) (context.Context
 	return context.WithValue(ctx, "user", user), nil
 }
 
-
-type Response struct{
+type Response struct {
 	Balance int64 `json:"balance"`
 }
 
-
-type ResponseMessage struct{
+type ResponseMessage struct {
 	Code int         `json:"code"`
 	Data interface{} `json:"data"`
 }
 
-type ErrorMessage struct{
-	Code int     `json:"code"`
+type ErrorMessage struct {
+	Code  int    `json:"code"`
 	Error string `json:"error"`
 }
 
 func example() {
 	// Global plugins
 	fn.Plugin(logger, ipWhitelist, auth, injectRequest)
-    // Uniform all responses
-    fn.SetErrorEncoder(func(ctx context.Context, err error) interface{} {
-    	req := ctx.Value("_rawreq").(*http.Request)
-    	log.Println("Error occurred: ", req.URL, err)
-        return &ErrorMessage{
-            Code: -1,
-            Error: err.Error(),
-        }
-    })
-    
-    fn.SetResponseEncoder(func(ctx context.Context, payload interface{}) interface{} {
-        return &ResponseMessage {
-            Code: 1,
-            Data: payload,
-        }
-    })
-    	
+	// Uniform all responses
+	fn.SetErrorEncoder(func(ctx context.Context, err error) interface{} {
+		req := ctx.Value("_rawreq").(*http.Request)
+		log.Println("Error occurred: ", req.URL, err)
+		return &ErrorMessage{
+			Code:  -1,
+			Error: err.Error(),
+		}
+	})
+
+	fn.SetResponseEncoder(func(ctx context.Context, payload interface{}) interface{} {
+		return &ResponseMessage{
+			Code: 1,
+			Data: payload,
+		}
+	})
+
 	group := fn.NewGroup()
-	
+
 	// Group plugins
 	group.Plugin(queryUserFromRedis)
-    http.Handle("/user/balance", group.Wrap(fetchBalance))
-    http.Handle("/user/buy", group.Wrap(buy))
+	http.Handle("/user/balance", group.Wrap(fetchBalance))
+	http.Handle("/user/buy", group.Wrap(buy))
 }
 
 func fetchBalance(ctx context.Context) (*Response, error) {
