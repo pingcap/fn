@@ -109,7 +109,3 @@ func SetResponseEncoder(c ResponseEncoder) {
 func SetMultipartFormMaxMemory(m int64) {
 	maxMemory = m
 }
-
-func ErrorWithStatusCode(err error, statusCode int) error {
-	return &statusCodeError{err, statusCode}
-}

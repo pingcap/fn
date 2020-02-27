@@ -172,7 +172,7 @@ func (s *fnSuite) TestSetResponseEncoder(c *C) {
 	c.Assert(err, IsNil)
 	handler.ServeHTTP(recorder, request)
 	respMsg := &testResponse{}
-	json.Unmarshal(recorder.Body.Bytes(), &respMsg)
+	_ = json.Unmarshal(recorder.Body.Bytes(), &respMsg)
 	c.Assert(reflect.DeepEqual(respMsg, testResp), IsTrue)
 }
 
@@ -195,7 +195,7 @@ func (s *fnSuite) TestSetErrorEncoder(c *C) {
 	handler.ServeHTTP(recorder, request)
 
 	respMsg := &testErrorResponse{}
-	json.Unmarshal(recorder.Body.Bytes(), &respMsg)
+	_ = json.Unmarshal(recorder.Body.Bytes(), &respMsg)
 	c.Assert(reflect.DeepEqual(respMsg, testErrorResp), IsTrue)
 }
 
@@ -207,6 +207,7 @@ func (s *fnSuite) TestGenericAdapter_Invoke(c *C) {
 
 	recorder := httptest.NewRecorder()
 	request, err := http.NewRequest(http.MethodGet, "", nil)
+	c.Assert(err == nil, IsTrue)
 	payload := []byte(`{"for":"hello", "bar":10000}`)
 	request.Body = ioutil.NopCloser(bytes.NewBuffer(payload))
 	c.Assert(err, IsNil)
