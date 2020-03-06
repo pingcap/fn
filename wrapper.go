@@ -15,9 +15,9 @@ package fn
 
 import (
 	"context"
-	"reflect"
 	"encoding/json"
 	"net/http"
+	"reflect"
 )
 
 type (
@@ -32,15 +32,6 @@ type (
 		plugins []PluginFunc
 		adapter adapter
 	}
-
-	statusCodeError struct {
-		error
-		statusCode int
-	}
-
-	StatusCodeError interface {
-		StatusCode() int
-	}
 )
 
 var (
@@ -48,24 +39,20 @@ var (
 	responseEncoder ResponseEncoder
 )
 
-func (s *statusCodeError) StatusCode() int {
-	return s.statusCode
-}
-
 func failure(ctx context.Context, w http.ResponseWriter, err error) {
 	statusCode := http.StatusBadRequest
-	if v, ok := err.(StatusCodeError); ok {
-		statusCode = v.StatusCode()
+	if v, ok := UnwrapErrorStatusCode(err); ok {
+		statusCode = v
 	}
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(errorEncoder(ctx, err))
+	_ = json.NewEncoder(w).Encode(errorEncoder(ctx, err))
 }
 
 func success(ctx context.Context, w http.ResponseWriter, data interface{}) {
 	if data == nil || (reflect.ValueOf(data).Kind() == reflect.Ptr && reflect.ValueOf(data).IsNil()) {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
-		json.NewEncoder(w).Encode(responseEncoder(ctx, data))
+		_ = json.NewEncoder(w).Encode(responseEncoder(ctx, data))
 	}
 }
 
