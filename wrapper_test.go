@@ -25,19 +25,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
 	"testing"
 
-	. "github.com/pingcap/check"
+	"github.com/stretchr/testify/require"
 )
-
-type fnSuite struct{}
-
-func TestFn(t *testing.T) {
-	TestingT(t)
-}
-
-var _ = Suite(&fnSuite{})
 
 type testRequest struct {
 	Foo string `json:"foo"`
@@ -91,7 +82,7 @@ func withAll(io.ReadCloser, *testRequest, Form, PostForm, http.Header, *multipar
 	return nil, nil
 }
 
-func (s *fnSuite) TestHandler(c *C) {
+func TestHandler(t *testing.T) {
 	Wrap(withNone)
 	Wrap(withBody)
 	Wrap(withReq)
@@ -109,23 +100,23 @@ func (s *fnSuite) TestHandler(c *C) {
 	Wrap(withInContextAndPayload)
 }
 
-func (s *fnSuite) TestPlugin(c *C) {
+func TestPlugin(t *testing.T) {
 	logic := func(ctx context.Context) (*testResponse, error) {
-		c.Assert(ctx.Value("key").(string) == "value", IsTrue)
-		c.Assert(ctx.Value("key2").(string) == "value2", IsTrue)
+		require.Equal(t, "value", ctx.Value("key").(string))
+		require.Equal(t, "value2", ctx.Value("key2").(string))
 		return &testResponse{}, nil
 	}
 
 	plugin1 := func(ctx context.Context, request *http.Request) (context.Context, error) {
-		c.Assert(ctx.Value("global1").(string) == "globalvalue1", IsTrue)
-		c.Assert(ctx.Value("global2").(string) == "globalvalue2", IsTrue)
+		require.Equal(t, "globalvalue1", ctx.Value("global1").(string))
+		require.Equal(t, "globalvalue2", ctx.Value("global2").(string))
 		return context.WithValue(ctx, "key", "value"), nil
 	}
 
 	plugin2 := func(ctx context.Context, request *http.Request) (context.Context, error) {
-		c.Assert(ctx.Value("global1").(string) == "globalvalue1", IsTrue)
-		c.Assert(ctx.Value("global2").(string) == "globalvalue2", IsTrue)
-		c.Assert(ctx.Value("key").(string) == "value", IsTrue)
+		require.Equal(t, "globalvalue1", ctx.Value("global1").(string))
+		require.Equal(t, "globalvalue2", ctx.Value("global2").(string))
+		require.Equal(t, "value", ctx.Value("key").(string))
 		return context.WithValue(ctx, "key2", "value2"), nil
 	}
 
@@ -133,31 +124,31 @@ func (s *fnSuite) TestPlugin(c *C) {
 
 	recorder := httptest.NewRecorder()
 	request, err := http.NewRequest(http.MethodGet, "", nil)
-	c.Assert(err, IsNil)
+	require.NoError(t, err)
 	handler.ServeHTTP(recorder, request)
 }
 
-func (s *fnSuite) TestGroupPlugin(c *C) {
+func TestGroupPlugin(t *testing.T) {
 	group := NewGroup()
 	group.Plugin(func(ctx context.Context, request *http.Request) (context.Context, error) {
 		return context.WithValue(ctx, "key", "value"), nil
 	})
 
 	logic := func(ctx context.Context) (*testResponse, error) {
-		c.Assert(ctx.Value("key").(string) == "value", IsTrue)
+		require.Equal(t, "value", ctx.Value("key").(string))
 		return &testResponse{}, nil
 	}
 	handler := group.Wrap(logic)
 
 	recorder := httptest.NewRecorder()
 	request, err := http.NewRequest(http.MethodGet, "", nil)
-	c.Assert(err, IsNil)
+	require.NoError(t, err)
 	handler.ServeHTTP(recorder, request)
 }
 
-func (s *fnSuite) TestSetResponseEncoder(c *C) {
+func TestSetResponseEncoder(t *testing.T) {
 	handler := Wrap(func(ctx context.Context, request *http.Request) (context.Context, error) {
-		return nil, nil
+		return context.TODO(), nil
 	})
 
 	testResp := &testResponse{
@@ -170,14 +161,14 @@ func (s *fnSuite) TestSetResponseEncoder(c *C) {
 
 	recorder := httptest.NewRecorder()
 	request, err := http.NewRequest(http.MethodGet, "", nil)
-	c.Assert(err, IsNil)
+	require.NoError(t, err)
 	handler.ServeHTTP(recorder, request)
 	respMsg := &testResponse{}
 	_ = json.Unmarshal(recorder.Body.Bytes(), &respMsg)
-	c.Assert(reflect.DeepEqual(respMsg, testResp), IsTrue)
+	require.Equal(t, testResp, respMsg)
 }
 
-func (s *fnSuite) TestSetErrorEncoder(c *C) {
+func TestSetErrorEncoder(t *testing.T) {
 	handler := Wrap(func(ctx context.Context, request *http.Request) (context.Context, error) {
 		return nil, errors.New("")
 	})
@@ -192,53 +183,50 @@ func (s *fnSuite) TestSetErrorEncoder(c *C) {
 
 	recorder := httptest.NewRecorder()
 	request, err := http.NewRequest(http.MethodGet, "", nil)
-	c.Assert(err, IsNil)
+	require.NoError(t, err)
 	handler.ServeHTTP(recorder, request)
 
 	respMsg := &testErrorResponse{}
 	_ = json.Unmarshal(recorder.Body.Bytes(), &respMsg)
-	c.Assert(reflect.DeepEqual(respMsg, testErrorResp), IsTrue)
+	require.Equal(t, testErrorResp, respMsg)
 }
 
-func (s *fnSuite) TestGenericAdapter_Invoke(c *C) {
+func TestGenericAdapter_Invoke(t *testing.T) {
 	type CustomForm testRequest
 	handler := Wrap(func(ctx context.Context, form *CustomForm) (context.Context, error) {
 		return nil, nil
 	})
-
 	recorder := httptest.NewRecorder()
 	request, err := http.NewRequest(http.MethodGet, "", nil)
-	c.Assert(err == nil, IsTrue)
+	require.NoError(t, err)
 	payload := []byte(`{"for":"hello", "bar":10000}`)
 	request.Body = ioutil.NopCloser(bytes.NewBuffer(payload))
-	c.Assert(err, IsNil)
+	require.NoError(t, err)
 	handler.ServeHTTP(recorder, request)
 }
 
-func (s *fnSuite) TestSimpleUnaryAdapter_Invoke(c *C) {
+func TestSimpleUnaryAdapter_Invoke(t *testing.T) {
 	handler := Wrap(withReq)
 
 	recorder := httptest.NewRecorder()
 	request, err := http.NewRequest(http.MethodGet, "", nil)
-	if err != nil {
-		c.Fatal(err)
-	}
+	require.NoError(t, err)
 	payload := []byte(`{"for":"hello", "bar":10000}`)
 	request.Body = ioutil.NopCloser(bytes.NewBuffer(payload))
-	c.Assert(err, IsNil)
+	require.NoError(t, err)
 	handler.ServeHTTP(recorder, request)
 }
 
-func (s *fnSuite) TestErrorWithStatusCode(c *C) {
+func TestErrorWithStatusCode(t *testing.T) {
 	handler := Wrap(func(ctx context.Context, request *http.Request) (context.Context, error) {
 		return nil, ErrorWithStatusCode(errors.New("not found"), http.StatusNotFound)
 	})
 
 	recorder := httptest.NewRecorder()
 	request, err := http.NewRequest(http.MethodGet, "", nil)
-	c.Assert(err, IsNil)
+	require.NoError(t, err)
 	handler.ServeHTTP(recorder, request)
-	c.Assert(recorder.Code == http.StatusNotFound, IsTrue)
+	require.Equal(t, http.StatusNotFound, recorder.Code)
 }
 
 func BenchmarkSimplePlainAdapter_Invoke(b *testing.B) {
