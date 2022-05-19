@@ -8,6 +8,7 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
@@ -18,12 +19,10 @@ import (
 	"net/http"
 	"testing"
 
-	. "github.com/pingcap/check"
+	"github.com/stretchr/testify/require"
 )
 
-var (
-	errTest = errors.New("test")
-)
+var errTest = errors.New("test")
 
 type withError struct {
 	err error
@@ -37,27 +36,18 @@ func (w *withError) Unwrap() error {
 	return w.err
 }
 
-type errSuite struct{}
-
-func TestError(t *testing.T) {
-	TestingT(t)
-}
-
-var _ = Suite(&errSuite{})
-
 // TestWithError test UnwrapErrorStatusCode method
-func (e *errSuite) TestWithError(c *C) {
+func TestWithError(t *testing.T) {
 	var err error = &withError{
 		err: ErrorWithStatusCode(errTest, http.StatusInternalServerError),
 	}
 	code, ok := UnwrapErrorStatusCode(err)
-	c.Assert(ok, IsTrue)
-	c.Assert(code == http.StatusInternalServerError, IsTrue)
+	require.True(t, ok)
+	require.Equal(t, http.StatusInternalServerError, code)
 }
 
-// TestOriginError ErrorWithStatusCode Unwrap
-func (e *errSuite) TestOriginError(c *C) {
+// TestOriginError test ErrorWithStatusCode Unwrap
+func TestOriginError(t *testing.T) {
 	err := ErrorWithStatusCode(errTest, http.StatusInternalServerError)
-	err = Unwrap(err)
-	c.Assert(err == errTest, IsTrue)
+	require.Equal(t, errTest, Unwrap(err))
 }
